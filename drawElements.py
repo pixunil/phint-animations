@@ -10,7 +10,7 @@ class Background:
         self.gradient.add_color_stop_rgb(0, 1, 1, 1)
         self.gradient.add_color_stop_rgb(1, .78, .78, .78)
 
-    def draw(self, ctx, sizes):
-        ctx.set_source(self.gradient)
-        ctx.rectangle(-sizes.width, -sizes.height, 2 * sizes.width, 2 * sizes.height)
+    def draw(self, ctx):
+        ctx.source = self.gradient
+        ctx.rectangle(-ctx.width, -ctx.height, 2 * ctx.width, 2 * ctx.height)
         ctx.fill()
