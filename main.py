@@ -2,6 +2,7 @@
 
 import drawElements
 from context import Context
+from graphics import polius
 from gi.repository import Gtk
 
 class Window(Gtk.Window):
@@ -26,6 +27,7 @@ class Canvas(Gtk.DrawingArea):
         Gtk.DrawingArea.__init__(self)
 
         self.background = drawElements.Background()
+        self.polius = polius.Shape()
 
         self.connect("draw", self.onDraw)
 
@@ -37,6 +39,7 @@ class Canvas(Gtk.DrawingArea):
         ctx = Context(width, height, ctx)
 
         self.background.draw(ctx)
+        self.polius.draw(ctx)
 
 if __name__ == "__main__":
     Window()
