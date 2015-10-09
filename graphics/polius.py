@@ -10,12 +10,12 @@ class Line(drawElements.Line):
     def __init__(self, angle):
         drawElements.Line.__init__(self)
 
-        self.addPoint(
+        self.add_point(
             .8 * cos(radians(angle)) - .25 * cos(radians(angle - 30)),
             .8 * sin(radians(angle)) - .25 * sin(radians(angle - 30))
         )
 
-        self.addPoint(
+        self.add_point(
             .8 * cos(radians(angle + 120)) - .25 * cos(radians(angle + 150)),
             .8 * sin(radians(angle + 120)) - .25 * sin(radians(angle + 150))
         )

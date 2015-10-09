@@ -11,21 +11,20 @@ class Background:
 
     def draw(self, ctx):
         ctx.source = self.gradient
-        ctx.rectangle(-ctx.width, -ctx.height, 2 * ctx.width, 2 * ctx.height)
-        ctx.fill()
+        ctx.paint()
 
 class Line:
     def __init__(self):
         self.points = []
 
-    def addPoint(self, x, y):
+    def add_point(self, x, y):
         self.points.append((x, y))
 
     def draw(self, ctx):
-        ctx.moveTo(*self.points[0])
+        ctx.move_to(*self.points[0])
 
         for point in self.points[1:]:
-            ctx.lineTo(*point)
+            ctx.line_to(*point)
 
         ctx.stroke()
 

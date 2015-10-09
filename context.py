@@ -3,15 +3,76 @@
 import cairo
 import math
 
-lineJoinMap = {
-    "miter": cairo.LINE_JOIN_MITER,
-    "round": cairo.LINE_JOIN_ROUND,
-    "bevel": cairo.LINE_JOIN_BEVEL
-}
+class contextProperty:
+    def __init__(self, func):
+        self.name = func.__name__
+
+    def __get__(self, instance, owner):
+        # call the cairo getter
+        getter = getattr(instance.ctx, "get_" + self.name)
+        return getter()
+
+    def __set__(self, instance, value):
+        # call the cairo setter
+        setter = getattr(instance.ctx, "set_" + self.name)
+        setter(value)
+
+class contextEnum:
+    def __init__(self, func):
+        contextProperty.__init__(self, func)
+        upper_name = self.name.upper()
+
+        self.options = {}
+
+        # take available values from the function
+        for option in func():
+            value = getattr(cairo, upper_name + "_" + option.upper())
+            self.options[option] = value
+
+    def __get__(self, instance, owner):
+        value = contextProperty.__get__(self, instance, owner)
+
+        for option in self.options:
+            if self.options[option] == value:
+                return option
+
+        raise AssertionError("%s has an unknown value %s" % (self.name, value))
+
+    def __set__(self, instance, value):
+        # lookup for the value in the dictionary
+        try:
+            value = self.options[value]
+        except KeyError:
+            # replace the KeyError with a helpful message
+            message = "%s got unknown value %s, choose from %s" % (self.name, value, ", ".join(self.options.keys()))
+            raise ValueError(message) from None
+
+        contextProperty.__set__(self, instance, value)
+
+class contextScalar(contextProperty):
+    def __init__(self, func):
+        contextProperty.__init__(self, func)
+        self.type = func()
+
+    def __set__(self, instance, value):
+        # force the value to have the saved type
+        contextProperty.__set__(self, instance, self.type(value))
 
 class Context:
-    def __init__(self, width, height, ctx):
-        self.ctx = ctx
+    def __init__(self, width, height, ctx = None):
+        if isinstance(ctx, cairo.Context):
+            self.surface = ctx.get_target()
+            self.ctx = ctx
+        elif isinstance(ctx, cairo.Surface):
+            surface = ctx
+            self.surface = surface
+            self.ctx = cairo.Context(surface)
+        else:
+            format = ctx
+            if format is None:
+                format = cairo.ARGB_32
+            self.surface = cairo.Surface(width, height, format)
+            self.ctx = cairo.Context(self.surface)
 
         # pick the smaller of width and height, to have the whole picture fitted
         size = min(width, height)
@@ -20,8 +81,8 @@ class Context:
         self.scale(size / 2, -size / 2)
         # align the point 0,0 to the middle
         self.translate(width / size, -height / size)
-        self.lineWidth = .1
-        self.lineJoin = "round"
+        self.line_width = .1
+        self.line_join = "round"
 
         self.width = width / size
         self.height = height / size
@@ -47,34 +108,22 @@ class Context:
 
         raise ValueError("Source should have either three members (rgb), four (rgba) or be a cairo.Pattern object")
 
-    @property
-    def lineWidth(self):
-        return self.ctx.get_line_width()
+    @contextScalar
+    def line_width():
+        return float
 
-    @lineWidth.setter
-    def lineWidth(self, lineWidth):
-        self.ctx.set_line_width(lineWidth)
+    @contextEnum
+    def line_join():
+        return ("miter", "round", "bevel")
 
-    @property
-    def lineJoin(self):
-        lineJoin = self.ctx.get_line_join()
-        for key, value in lineJoinMap:
-            if value == lineJoin:
-                return key
+    @contextEnum
+    def line_cap():
+        return ("butt", "round", "square")
 
-    @lineJoin.setter
-    def lineJoin(self, lineJoin):
-        try:
-            lineJoin = lineJoinMap[lineJoin]
-        except:
-            raise ArgumentError("Invalid line join")
-
-        self.ctx.set_line_join(lineJoin)
-
-    def moveTo(self, x, y):
+    def move_to(self, x, y):
         self.ctx.move_to(x, y)
 
-    def lineTo(self, x, y):
+    def line_to(self, x, y):
         self.ctx.line_to(x, y)
 
     def rectangle(self, x, y, width, height):
@@ -91,6 +140,9 @@ class Context:
 
     def stroke(self):
         self.ctx.stroke()
+
+    def paint(self):
+        self.ctx.paint()
 
     def save(self):
         self.ctx.save()
