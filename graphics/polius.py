@@ -3,9 +3,6 @@
 from math import *
 import drawElements
 
-class Shape:
-    color = (0, 0, 1)
-
 class Line(drawElements.Line):
     def __init__(self, angle):
         drawElements.Line.__init__(self)

@@ -17,7 +17,7 @@ class contextProperty:
         setter = getattr(instance.ctx, "set_" + self.name)
         setter(value)
 
-class contextEnum:
+class contextEnum(contextProperty):
     def __init__(self, func):
         contextProperty.__init__(self, func)
         upper_name = self.name.upper()
@@ -70,8 +70,8 @@ class Context:
         else:
             format = ctx
             if format is None:
-                format = cairo.ARGB_32
-            self.surface = cairo.Surface(width, height, format)
+                format = cairo.FORMAT_ARGB32
+            self.surface = cairo.ImageSurface(format, width, height)
             self.ctx = cairo.Context(self.surface)
 
         # pick the smaller of width and height, to have the whole picture fitted

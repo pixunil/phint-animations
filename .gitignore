@@ -1,1 +1,7 @@
+# python compiled bytecode
 __pycache__
+*.pyc
+
+# output images
+*.svg
+*.png
