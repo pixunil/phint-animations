@@ -4,7 +4,7 @@ from utils import *
 import drawElements
 from context import Context
 from export import ExportDialog
-from graphics import polius
+from graphics import graphics
 from gi.repository import Gtk
 
 class Window(Gtk.Window):
@@ -16,21 +16,43 @@ class Window(Gtk.Window):
         box = Gtk.Box(orientation = Gtk.Orientation.VERTICAL)
         self.add(box)
 
-        bar = Gtk.Toolbar()
+        bar = Gtk.Toolbar(orientation = Gtk.Orientation.HORIZONTAL)
         box.pack_start(bar, False, False, 0)
 
         export = Gtk.ToolButton(label = "Export", icon_name = "document-save")
         export.connect("clicked", self.export)
         bar.insert(export, -1)
 
-        background = drawElements.Background()
-        content = polius.Shape()
+        self.model = Gtk.ListStore(str)
+
+        for name in graphics:
+            self.model.append([name])
+
+        self.combobox = Gtk.ComboBox.new_with_model(self.model)
+        renderer = Gtk.CellRendererText()
+        self.combobox.pack_start(renderer, True)
+        self.combobox.add_attribute(renderer, "text", 0)
+        self.combobox.set_active(0)
+        self.combobox.set_id_column(0)
+
+        self.combobox.connect("changed", self.on_graphic_changed)
+
+        item = Gtk.ToolItem()
+        item.add(self.combobox)
+        bar.insert(item, -1)
 
         self.elements = drawElements.Shape()
-        self.elements.shapes = (background, content)
 
-        canvas = Canvas(self)
-        box.pack_start(canvas, True, True, 0)
+        background = drawElements.Background()
+        self.elements.shapes.append(background)
+
+        graphic = self.combobox.get_active_id()
+        # get the module and create the shape
+        graphic = graphics[graphic].Shape()
+        self.elements.shapes.append(graphic)
+
+        self.canvas = Canvas(self)
+        box.pack_start(self.canvas, True, True, 0)
 
         self.set_icon_name("applications-graphics")
         self.set_title("phint")
@@ -40,8 +62,18 @@ class Window(Gtk.Window):
     def on_destroy(self, *args):
         Gtk.main_quit()
 
+    def on_graphic_changed(self, combobox):
+        graphic = combobox.get_active_id()
+        # get the module and create the shape
+        graphic = graphics[graphic].Shape()
+
+        self.elements.shapes[1] = graphic
+
+        self.canvas.queue_draw()
+
     def export(self, *args):
-        self.export_dialog.run(self.elements, "polius")
+        name = self.combobox.get_active_id()
+        self.export_dialog.run(self.elements, name)
 
     @lazy
     def export_dialog(self):

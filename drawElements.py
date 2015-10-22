@@ -14,6 +14,8 @@ class Background:
         ctx.paint()
 
 class Line:
+    line_width = .1
+
     def __init__(self):
         self.points = []
 
@@ -21,6 +23,8 @@ class Line:
         self.points.append((x, y))
 
     def draw(self, ctx):
+        ctx.line_width = self.line_width
+
         ctx.move_to(*self.points[0])
 
         for point in self.points[1:]:
@@ -38,6 +42,23 @@ class Arc:
 
     def draw(self, ctx):
         ctx.arc(self.x, self.y, self.radius, self.start, self.end)
+        ctx.stroke()
+
+class Oval:
+    def __init__(self, x, y, rx, ry):
+        self.x = x
+        self.y = y
+        self.rx = rx
+        self.ry = ry
+
+    def draw(self, ctx):
+        ctx.save()
+        ctx.translate(self.x, self.y)
+        ctx.scale(self.rx, self.ry)
+
+        ctx.arc(0, 0, 1)
+
+        ctx.restore()
         ctx.stroke()
 
 class Shape:
