@@ -72,9 +72,6 @@ class ExportDialog(Gtk.FileChooserDialog):
                 extension = self.get_filter().extension
                 filename += "." + extension
 
-            print(types[extension])
-            print(types[extension].export)
-
             types[extension].export(self.width.value, self.height.value, filename, elements)
 
         self.hide()

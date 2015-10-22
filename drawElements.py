@@ -3,11 +3,11 @@
 import cairo
 import math
 
-class Background:
+class Gradient:
     def __init__(self):
         self.gradient = cairo.RadialGradient(0, 0, 0, 0, 0, 1)
-        self.gradient.add_color_stop_rgb(0, 1, 1, 1)
-        self.gradient.add_color_stop_rgb(1, .78, .78, .78)
+        self.gradient.add_color_stop_rgb(0, *self.start)
+        self.gradient.add_color_stop_rgb(1, *self.end)
 
     def draw(self, ctx):
         ctx.source = self.gradient
