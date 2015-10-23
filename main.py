@@ -42,8 +42,9 @@ class Window(Gtk.Window):
 
         self.connect("destroy", self.on_destroy)
 
-        self.elements = drawElements.Shape()
-        self.elements.shapes = [None, None]
+        self.elements = drawElements.Group()
+        # reserve two indizes for background and graphic
+        self.elements.add(None, None)
 
         box = Gtk.Box(orientation = Gtk.Orientation.VERTICAL)
         self.add(box)
@@ -76,7 +77,7 @@ class Window(Gtk.Window):
         # get the module and create the shape
         graphic = graphics[graphic].Shape()
 
-        self.elements.shapes[1] = graphic
+        self.elements[1] = graphic
 
         self.canvas.queue_draw()
 
@@ -84,7 +85,7 @@ class Window(Gtk.Window):
         # get the module and create the background
         background = backgrounds[background].Background()
 
-        self.elements.shapes[0] = background
+        self.elements[0] = background
 
         self.canvas.queue_draw()
 

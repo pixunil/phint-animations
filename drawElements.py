@@ -13,9 +13,33 @@ class Gradient:
         ctx.source = self.gradient
         ctx.paint()
 
-class Line:
-    line_width = .1
+class Shape:
+    x = 0
+    y = 0
 
+    width = 1
+    height = 1
+
+    style = "stroke"
+    line_width = .1
+    line_join = "round"
+
+    def begin(self, ctx):
+        ctx.save()
+        ctx.translate(self.x, self.y)
+        ctx.scale(self.width, self.height)
+
+    def finish(self, ctx):
+        ctx.restore()
+
+        if self.style == "stroke":
+            ctx.line_width = self.line_width
+            ctx.line_join = self.line_join
+            ctx.stroke()
+        elif self.style == "fill":
+            ctx.fill()
+
+class Line(Shape):
     def __init__(self):
         self.points = []
 
@@ -23,53 +47,53 @@ class Line:
         self.points.append((x, y))
 
     def draw(self, ctx):
-        ctx.line_width = self.line_width
+        self.begin(ctx)
 
         ctx.move_to(*self.points[0])
 
         for point in self.points[1:]:
             ctx.line_to(*point)
 
-        ctx.stroke()
+        self.finish(ctx)
 
-class Arc:
+class Arc(Shape):
+    start = 0
+    end = math.pi * 2
+
     def __init__(self, x, y, radius, start = 0, end = math.pi * 2):
         self.x = x
         self.y = y
-        self.radius = radius
+        self.width = radius
+        self.height = radius
         self.start = start
         self.end = end
 
     def draw(self, ctx):
-        ctx.arc(self.x, self.y, self.radius, self.start, self.end)
-        ctx.stroke()
+        self.begin(ctx)
 
-class Oval:
-    def __init__(self, x, y, rx, ry):
+        ctx.arc(0, 0, 1, self.start, self.end)
+
+        self.finish(ctx)
+
+class Oval(Arc):
+    def __init__(self, x, y, rx, ry, start = 0, end = math.pi * 2):
         self.x = x
         self.y = y
-        self.rx = rx
-        self.ry = ry
+        self.width = rx
+        self.height = ry
+        self.start = start
+        self.end = end
 
-    def draw(self, ctx):
-        ctx.save()
-        ctx.translate(self.x, self.y)
-        ctx.scale(self.rx, self.ry)
-
-        ctx.arc(0, 0, 1)
-
-        ctx.restore()
-        ctx.stroke()
-
-class Shape:
+class Group(list):
     color = None
 
-    def __init__(self):
-        self.shapes = []
+    def add(self, *shapes):
+        for shape in shapes:
+            self.append(shape)
 
     def draw(self, ctx):
         if self.color:
             ctx.source = self.color
 
-        for shape in self.shapes:
+        for shape in self:
             shape.draw(ctx)

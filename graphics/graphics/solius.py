@@ -17,6 +17,8 @@ class Oval(drawElements.Oval):
         drawElements.Oval.__init__(self, 0, 0, .6, .4)
 
 class Dot(drawElements.Arc):
+    style = "fill"
+
     def __init__(self):
         drawElements.Arc.__init__(self, 0, 0, .05)
 
@@ -29,13 +31,13 @@ class LowerLine(drawElements.Line):
         self.add_point(-.1, -.55)
         self.add_point(.1, -.55)
 
-class Shape(drawElements.Shape):
+class Shape(drawElements.Group):
     color = (1, 1, 0)
 
     def __init__(self):
-        drawElements.Shape.__init__(self)
+        drawElements.Group.__init__(self)
 
-        self.shapes = (
+        self.add(
             UpperCaret(),
             Oval(),
             Dot(),

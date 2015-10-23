@@ -27,12 +27,14 @@ class Arc(drawElements.Arc):
 
         drawElements.Arc.__init__(self, x, y, .25, start, end)
 
-class Shape(drawElements.Shape):
+class Shape(drawElements.Group):
     color = (0, 0, 1)
 
     def __init__(self):
-        drawElements.Shape.__init__(self)
+        drawElements.Group.__init__(self)
 
         for angle in range(90, 360, 120):
-            self.shapes.append(Line(angle))
-            self.shapes.append(Arc(angle))
+            self.add(
+                Line(angle),
+                Arc(angle)
+            )
