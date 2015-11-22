@@ -2,15 +2,15 @@
 
 import drawElements
 
-class UpperCaret(drawElements.Line):
+class UpperCaret(drawElements.Path):
     line_width = .05
 
     def __init__(self):
-        drawElements.Line.__init__(self)
+        drawElements.Path.__init__(self)
 
-        self.add_point(-.1, .55)
-        self.add_point(0, .6)
-        self.add_point(.1, .55)
+        self.line(-.1, .55)
+        self.line(0, .6)
+        self.line(.1, .55)
 
 class Oval(drawElements.Oval):
     def __init__(self):
@@ -22,14 +22,14 @@ class Dot(drawElements.Arc):
     def __init__(self):
         drawElements.Arc.__init__(self, 0, 0, .05)
 
-class LowerLine(drawElements.Line):
+class LowerLine(drawElements.Path):
     line_width = .05
 
     def __init__(self):
-        drawElements.Line.__init__(self)
+        drawElements.Path.__init__(self)
 
-        self.add_point(-.1, -.55)
-        self.add_point(.1, -.55)
+        self.line(-.1, -.55)
+        self.line(.1, -.55)
 
 class Shape(drawElements.Group):
     color = (1, 1, 0)

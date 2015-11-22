@@ -3,16 +3,16 @@
 from math import *
 import drawElements
 
-class Line(drawElements.Line):
+class Line(drawElements.Path):
     def __init__(self, angle):
-        drawElements.Line.__init__(self)
+        drawElements.Path.__init__(self)
 
-        self.add_point(
+        self.line(
             .8 * cos(radians(angle)) - .25 * cos(radians(angle - 30)),
             .8 * sin(radians(angle)) - .25 * sin(radians(angle - 30))
         )
 
-        self.add_point(
+        self.line(
             .8 * cos(radians(angle + 120)) - .25 * cos(radians(angle + 150)),
             .8 * sin(radians(angle + 120)) - .25 * sin(radians(angle + 150))
         )

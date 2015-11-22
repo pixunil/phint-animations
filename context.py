@@ -135,6 +135,9 @@ class Context:
         else:
             self.ctx.arc(x, y, radius, start, end)
 
+    def close(self):
+        self.ctx.close_path()
+
     def fill(self):
         self.ctx.fill()
 

@@ -5,5 +5,8 @@ from collections import OrderedDict
 
 graphics = OrderedDict()
 
-for name in ("polius", "solius"):
+for name in (
+    "ulonius", "navulius", "polius",
+    "solius"
+):
     graphics[name] = import_module("." + name, "graphics.graphics")

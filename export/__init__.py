@@ -8,6 +8,7 @@ types = {}
 for filetype in ("png", "svg"):
     types[filetype] = import_module("." + filetype, "export")
 
+
 class SpinButton(Gtk.SpinButton):
     def __init__(self):
         Gtk.SpinButton.__init__(self)
@@ -20,10 +21,10 @@ class SpinButton(Gtk.SpinButton):
     def value(self):
         return self.get_value_as_int()
 
+
 class ExportDialog(Gtk.FileChooserDialog):
     def __init__(self, window):
-        Gtk.FileChooserDialog.__init__(
-            self,
+        Gtk.FileChooserDialog.__init__(self,
             transient_for = window,
             title = "Export",
             action = Gtk.FileChooserAction.SAVE,

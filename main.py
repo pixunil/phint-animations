@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
-from utils import *
+from gi.repository import Gtk
+
+from utils import lazy
 import drawElements
 from context import Context
 from export import ExportDialog
 from graphics import graphics, backgrounds
-from gi.repository import Gtk
+
 
 class ToolComboBox(Gtk.ToolItem):
     def __init__(self, iterable, callback):
@@ -36,9 +38,12 @@ class ToolComboBox(Gtk.ToolItem):
     def on_changed(self, combobox):
         self.callback(self.name)
 
+
 class Window(Gtk.Window):
     def __init__(self):
-        Gtk.Window.__init__(self, icon_name = "applications-graphics", title = "phint")
+        Gtk.Window.__init__(self,
+            icon_name = "applications-graphics", title = "phint"
+        )
 
         self.connect("destroy", self.on_destroy)
 
@@ -97,6 +102,7 @@ class Window(Gtk.Window):
     @lazy
     def export_dialog(self):
         return ExportDialog(self)
+
 
 class Canvas(Gtk.DrawingArea):
     def __init__(self, window):

@@ -39,20 +39,48 @@ class Shape:
         elif self.style == "fill":
             ctx.fill()
 
-class Line(Shape):
-    def __init__(self):
-        self.points = []
+class LineNode(object):
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
 
-    def add_point(self, x, y):
-        self.points.append((x, y))
+    def connect(self, ctx):
+        ctx.line_to(self.x, self.y)
+
+class ArcNode(object):
+    def __init__(self, x, y, radius, start = 0, end = math.pi * 2, clockwise = False):
+        self.x = x
+        self.y = y
+        self.radius = radius
+        self.start = start
+        self.end = end
+        self.clockwise = clockwise
+
+    def connect(self, ctx):
+        ctx.arc(self.x, self.y, self.radius, self.start, self.end, self.clockwise)
+
+class CloseNode(object):
+    def connect(self, ctx):
+        ctx.close()
+
+class Path(Shape):
+    def __init__(self):
+        self.nodes = []
+
+    def line(self, *args):
+        self.nodes.append(LineNode(*args))
+
+    def arc(self, *args):
+        self.nodes.append(ArcNode(*args))
+
+    def close(self):
+        self.nodes.append(CloseNode())
 
     def draw(self, ctx):
         self.begin(ctx)
 
-        ctx.move_to(*self.points[0])
-
-        for point in self.points[1:]:
-            ctx.line_to(*point)
+        for node in self.nodes:
+            node.connect(ctx)
 
         self.finish(ctx)
 
