@@ -1,3 +1,5 @@
+use cairo::Context;
+
 #[derive(Default, Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
 pub struct Point {
     x: f64,
@@ -30,6 +32,17 @@ pub enum Segment {
     Arc(Arc),
     OvalArc(OvalArc),
     BezierCurve(BezierCurve)
+}
+
+impl Segment {
+    pub fn draw(&self, ctx: &Context, begin: bool) {
+        match *self {
+            Segment::Line(ref line) => line.draw(ctx, begin),
+            Segment::Arc(ref arc) => arc.draw(ctx),
+            Segment::OvalArc(ref arc) => arc.draw(ctx),
+            Segment::BezierCurve(ref bezier) => bezier.draw(ctx, begin)
+        }
+    }
 }
 
 impl From<Line> for Segment {
@@ -69,6 +82,16 @@ impl Line {
             end: end.into()
         }
     }
+
+    fn draw(&self, ctx: &Context, begin: bool) {
+        if begin {
+            ctx.move_to(self.start.x, self.start.y);
+        } else {
+            ctx.line_to(self.start.x, self.start.y);
+        }
+
+        ctx.line_to(self.end.x, self.end.y);
+    }
 }
 
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
@@ -82,6 +105,16 @@ pub struct Arc {
 impl Arc {
     pub fn new(center: Point, radius: f64, start: f64, end: f64) -> Arc {
         Arc {center, radius, start, end}
+    }
+
+    fn draw(&self, ctx: &Context) {
+        if self.start < self.end {
+            ctx.arc(self.center.x, self.center.y,
+                self.radius, self.start, self.end);
+        } else {
+            ctx.arc_negative(self.center.x, self.center.y,
+                self.radius, self.start, self.end);
+        }
     }
 }
 
@@ -98,6 +131,14 @@ impl OvalArc {
     fn new(center: Point, radiusx: f64, radiusy: f64, start: f64, end: f64) -> OvalArc {
         OvalArc {center, radiusx, radiusy, start, end}
     }
+
+    fn draw(&self, ctx: &Context) {
+        ctx.save();
+        ctx.translate(self.center.x, self.center.y);
+        ctx.scale(self.radiusx, self.radiusy);
+        ctx.arc(0.0, 0.0, 1.0, self.start, self.end);
+        ctx.restore();
+    }
 }
 
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
@@ -106,4 +147,17 @@ pub struct BezierCurve {
     control1: Point,
     control2: Point,
     end: Point
+}
+
+impl BezierCurve {
+    fn draw(&self, ctx: &Context, begin: bool) {
+        if begin {
+            ctx.move_to(self.start.x, self.start.y);
+        } else {
+            ctx.line_to(self.start.x, self.start.y);
+        }
+
+        ctx.curve_to(self.control1.x, self.control1.y,
+            self.control2.x, self.control2.y, self.end.x, self.end.y);
+    }
 }

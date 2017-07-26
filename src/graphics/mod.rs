@@ -1,3 +1,5 @@
+use cairo::Context;
+
 mod segments;
 
 pub use self::segments::{Point, Line, Arc};
@@ -6,6 +8,16 @@ pub use self::segments::{Point, Line, Arc};
 pub struct Graphic {
     color: (f64, f64, f64),
     groups: Vec<Group>
+}
+
+impl Graphic {
+    pub fn draw(&self, ctx: &Context) {
+        ctx.set_source_rgb(self.color.0, self.color.1, self.color.2);
+
+        for group in &self.groups {
+            group.draw(ctx);
+        }
+    }
 }
 
 impl Graphic {
@@ -22,6 +34,23 @@ impl Graphic {
 pub struct Group {
     segments: Vec<segments::Segment>,
     close: bool
+}
+
+impl Group {
+    fn draw(&self, ctx: &Context) {
+        let mut begin = true;
+
+        for segment in &self.segments {
+            segment.draw(ctx, begin);
+            begin = false;
+        }
+
+        if self.close {
+            ctx.close_path();
+        }
+
+        ctx.stroke();
+    }
 }
 
 impl<T: Into<segments::Segment>> From<T> for Group {
