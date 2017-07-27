@@ -1,6 +1,8 @@
 use cairo::Context;
 
-#[derive(Default, Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
+use utils;
+
+#[derive(Default, Clone, Copy, PartialEq, Debug, Serialize)]
 pub struct Point {
     x: f64,
     y: f64
@@ -98,7 +100,9 @@ impl Line {
 pub struct Arc {
     center: Point,
     radius: f64,
+    #[serde(deserialize_with = "utils::deserialize::angle")]
     start: f64,
+    #[serde(deserialize_with = "utils::deserialize::angle")]
     end: f64
 }
 
@@ -123,7 +127,9 @@ pub struct OvalArc {
     center: Point,
     radiusx: f64,
     radiusy: f64,
+    #[serde(deserialize_with = "utils::deserialize::angle")]
     start: f64,
+    #[serde(deserialize_with = "utils::deserialize::angle")]
     end: f64
 }
 

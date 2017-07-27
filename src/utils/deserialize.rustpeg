@@ -1,0 +1,39 @@
+use graphics::Point;
+
+pub float -> f64
+    = number:$(
+        [+-]? [0-9]+ "." [0-9]*
+        / [+-]? "."? [0-9]+
+    ) {
+        number.parse().unwrap()
+    }
+
+pub angle -> f64
+    = degree:float "° " minute:float "' " second:float "''" {
+        (degree + minute / 60.0 + second / 3600.0).to_radians()
+    }
+    / degree:float "° " minute:float "'" {
+        (degree + minute / 60.0).to_radians()
+    }
+    / degree:float "°" {
+        degree.to_radians()
+    }
+    / radians:float {
+        radians
+    }
+
+polar -> (f64, f64)
+    = radius:float "; " phi:angle {
+        (radius, phi)
+    }
+
+pub point -> Point
+    = polars:polar ++ " ~ " {
+        let mut point = Point::default();
+
+        for (radius, angle) in polars {
+            point = point.on_circle(radius, angle);
+        }
+
+        point
+    }

@@ -31,6 +31,7 @@ impl Graphic {
 }
 
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Group {
     segments: Vec<segments::Segment>,
     close: bool
@@ -50,6 +51,15 @@ impl Group {
         }
 
         ctx.stroke();
+    }
+}
+
+impl Default for Group {
+    fn default() -> Group {
+        Group {
+            segments: Vec::new(),
+            close: false
+        }
     }
 }
 

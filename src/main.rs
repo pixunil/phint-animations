@@ -1,3 +1,4 @@
+extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
@@ -10,6 +11,7 @@ use gtk::prelude::*;
 use cairo::LineJoin;
 
 mod graphics;
+mod utils;
 
 use graphics::{Graphic, Point, Line, Arc};
 
