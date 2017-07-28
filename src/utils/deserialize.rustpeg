@@ -28,7 +28,19 @@ polar -> (f64, f64)
     }
 
 pub point -> Point
-    = polars:polar ++ " ~ " {
+    = x:float " | " y:float " ~ " polars:polar ++ " ~ " {
+        let mut point = Point::new(x, y);
+
+        for (radius, angle) in polars {
+            point = point.on_circle(radius, angle);
+        }
+
+        point
+    }
+    / x:float " | " y:float {
+        Point::new(x, y)
+    }
+    / polars:polar ++ " ~ " {
         let mut point = Point::default();
 
         for (radius, angle) in polars {

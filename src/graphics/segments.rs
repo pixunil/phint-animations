@@ -1,6 +1,9 @@
+use std::f64::consts;
 use cairo::Context;
 
 use utils;
+
+const TAU: f64 = 2.0 * consts::PI;
 
 #[derive(Default, Clone, Copy, PartialEq, Debug, Serialize)]
 pub struct Point {
@@ -97,6 +100,7 @@ impl Line {
 }
 
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Arc {
     center: Point,
     radius: f64,
@@ -122,7 +126,19 @@ impl Arc {
     }
 }
 
+impl Default for Arc {
+    fn default() -> Arc {
+        Arc {
+            center: Point::default(),
+            radius: 1.0,
+            start: 0.0,
+            end: TAU
+        }
+    }
+}
+
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
+#[serde(default)]
 pub struct OvalArc {
     center: Point,
     radiusx: f64,
@@ -144,6 +160,18 @@ impl OvalArc {
         ctx.scale(self.radiusx, self.radiusy);
         ctx.arc(0.0, 0.0, 1.0, self.start, self.end);
         ctx.restore();
+    }
+}
+
+impl Default for OvalArc {
+    fn default() -> OvalArc {
+        OvalArc {
+            center: Point::default(),
+            radiusx: 1.0,
+            radiusy: 1.0,
+            start: 0.0,
+            end: TAU
+        }
     }
 }
 

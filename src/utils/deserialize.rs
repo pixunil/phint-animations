@@ -1,10 +1,54 @@
 use std::fmt;
-use serde::de::{self, Error, Deserialize, Deserializer, Visitor, MapAccess};
+use serde::de::{self, Error, Unexpected, Deserialize, Deserializer, Visitor, MapAccess};
 
-use graphics::Point;
+use graphics::{Style, Point};
 
 mod grammar {
     include!(concat!(env!("OUT_DIR"), "/deserialize.rs"));
+}
+
+struct LineWidthVisitor;
+
+impl<'de> Visitor<'de> for LineWidthVisitor {
+    type Value = f64;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("a float, `thin` or `thick`")
+    }
+
+    fn visit_i64<E>(self, value: i64) -> Result<f64, E>
+        where E: de::Error
+    {
+        Ok(value as f64)
+    }
+
+    fn visit_u64<E>(self, value: u64) -> Result<f64, E>
+        where E: de::Error
+    {
+        Ok(value as f64)
+    }
+
+    fn visit_f64<E>(self, value: f64) -> Result<f64, E>
+        where E: de::Error
+    {
+        Ok(value)
+    }
+
+    fn visit_str<E>(self, value: &str) -> Result<f64, E>
+        where E: de::Error
+    {
+        match value {
+            "thin" => Ok(0.05),
+            "thick" => Ok(0.1),
+            invalid => Err(E::invalid_value(Unexpected::Str(invalid), &self))
+        }
+    }
+}
+
+pub fn line_width<'de, D>(deserializer: D) -> Result<f64, D::Error>
+    where D: Deserializer<'de>
+{
+    deserializer.deserialize_f64(LineWidthVisitor)
 }
 
 struct AngleVisitor;
@@ -49,6 +93,34 @@ pub fn angle<'de, D>(deserializer: D) -> Result<f64, D::Error>
     where D: Deserializer<'de>
 {
     deserializer.deserialize_f64(AngleVisitor)
+}
+
+struct StyleVisitor;
+
+impl<'de> Visitor<'de> for StyleVisitor {
+    type Value = Style;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("one of `stroke` or `fill`")
+    }
+
+    fn visit_str<E>(self, value: &str) -> Result<Style, E>
+        where E: de::Error
+    {
+        match value {
+            "stroke" => Ok(Style::Stroke),
+            "fill" => Ok(Style::Fill),
+            invalid => Err(E::invalid_value(Unexpected::Str(invalid), &self))
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for Style {
+    fn deserialize<D>(deserializer: D) -> Result<Style, D::Error>
+        where D: Deserializer<'de>
+    {
+        deserializer.deserialize_str(StyleVisitor)
+    }
 }
 
 static POINT_FIELDS: &[&str] = &["x", "y"];
