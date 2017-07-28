@@ -1,0 +1,34 @@
+{
+    "color": [1.0, 1.0, 0.0],
+    "groups": [{
+        "segments": [{
+            "type": "arc",
+            "radius": 0.05
+        }],
+        "style": "fill"
+    }, {
+        "segments": [{
+            "type": "oval-arc",
+            "radiusx": 0.6,
+            "radiusy": 0.4
+        }]
+    }, {
+        "segments": [{
+            "type": "line",
+            "start": "-0.1 | 0.55",
+            "end": "0.0 | 0.6"
+        }, {
+            "type": "line",
+            "start": "0.0 | 0.6",
+            "end": "0.1 | 0.55"
+        }],
+        "line-width": "thin"
+    }, {
+        "segments": [{
+            "type": "line",
+            "start": "-0.1 | -0.55",
+            "end": "0.1 | -0.55"
+        }],
+        "line-width": "thin"
+    }]
+}

@@ -1,0 +1,66 @@
+{
+    "color": [0.0, 1.0, 0.0],
+    "groups": [{
+        "segments": [{
+            "type": "arc",
+            "radius": 0.3,
+            "start": "22° 30'",
+            "end": "67° 30'"
+        }],
+        "line-width": "thin"
+    }, {
+        "segments": [{
+            "type": "arc",
+            "radius": 0.3,
+            "start": "112° 30'",
+            "end": "157° 30'"
+        }],
+        "line-width": "thin"
+    }, {
+        "segments": [{
+            "type": "arc",
+            "radius": 0.3,
+            "start": "202° 30'",
+            "end": "247° 30'"
+        }],
+        "line-width": "thin"
+    }, {
+        "segments": [{
+            "type": "arc",
+            "radius": 0.3,
+            "start": "292° 30'",
+            "end": "337° 30'"
+        }],
+        "line-width": "thin"
+    }, {
+        "segments": [{
+            "type": "arc",
+            "radius": 0.6,
+            "start": "-22° 30'",
+            "end": "22° 30'"
+        }],
+        "line-width": "thin"
+    }, {
+        "segments": [{
+            "type": "arc",
+            "radius": 0.6,
+            "start": "45°",
+            "end": "135°"
+        }]
+    }, {
+        "segments": [{
+            "type": "arc",
+            "radius": 0.6,
+            "start": "157° 30'",
+            "end": "202° 30'"
+        }],
+        "line-width": "thin"
+    }, {
+        "segments": [{
+            "type": "arc",
+            "radius": 0.6,
+            "start": "225° 30'",
+            "end": "315° 30'"
+        }]
+    }]
+}
