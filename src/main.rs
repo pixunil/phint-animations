@@ -6,6 +6,10 @@ extern crate gtk;
 extern crate cairo;
 
 use std::env;
+use std::fs;
+use std::io;
+use std::path::Path;
+use std::ffi::OsStr;
 use gtk::prelude::*;
 use cairo::LineJoin;
 
@@ -14,22 +18,49 @@ mod utils;
 
 use graphics::Graphic;
 
-fn main() {
-    let args = env::args().collect::<Vec<_>>();
-    let path = args.get(1).map(String::as_ref).unwrap_or("data/polius.json");
+fn scan<P: AsRef<Path>>(path: P) -> io::Result<(Vec<String>, Vec<Graphic>)> {
+    let mut names = Vec::new();
+    let mut graphics = Vec::new();
 
-    let graphic = match Graphic::load(path) {
-        Ok(graphic) => graphic,
-        Err(err) => {
-            println!("{}", err);
-            return;
+    for entry in fs::read_dir(path)? {
+        let entry = entry?;
+        let path = entry.path();
+
+        if path.is_file() {
+            let graphic = match Graphic::load(&path) {
+                Ok(graphic) => graphic,
+                Err(err) => {
+                    println!("error while processing {}: {}", path.to_string_lossy(), err);
+                    continue;
+                }
+            };
+
+            let name = match path.file_stem().and_then(OsStr::to_str) {
+                Some(name) => name,
+                None => {
+                    println!("error while processing {}: invalid name", path.to_string_lossy());
+                    continue;
+                }
+            };
+
+            names.push(name.into());
+            graphics.push(graphic);
         }
-    };
+    }
 
+    Ok((names, graphics))
+}
+
+fn main() {
     if gtk::init().is_err() {
         println!("Failed to initialize GTK.");
         return;
     }
+
+    let args = env::args().collect::<Vec<_>>();
+    let path = args.get(1).map(String::as_ref).unwrap_or("data");
+
+    let (names, graphics) = scan(path).unwrap();
 
     let window = gtk::Window::new(gtk::WindowType::Toplevel);
     window.set_title("phint");
@@ -40,8 +71,27 @@ fn main() {
         Inhibit(false)
     });
 
+    let container = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    window.add(&container);
+
+    let bar = gtk::Toolbar::new();
+    container.pack_start(&bar, false, false, 0);
+
+    let graphic_chooser = gtk::ComboBoxText::new();
+    let item = gtk::ToolItem::new();
+    bar.insert(&item, -1);
+    item.add(&graphic_chooser);
+
+    for name in &names {
+        graphic_chooser.append_text(name);
+    }
+
     let canvas = gtk::DrawingArea::new();
-    window.add(&canvas);
+    container.pack_start(&canvas, true, true, 0);
+
+    let canvas_redraw = canvas.clone();
+    graphic_chooser.connect_changed(move |_| canvas_redraw.queue_draw());
+    graphic_chooser.set_active(0);
 
     canvas.connect_draw(move |canvas, ctx| {
         let gtk::Allocation {width, height, ..} = canvas.get_allocation();
@@ -56,6 +106,7 @@ fn main() {
 
         ctx.set_line_join(LineJoin::Round);
 
+        let graphic = &graphics[graphic_chooser.get_active() as usize];
         graphic.draw(ctx);
 
         gtk::Inhibit(false)
