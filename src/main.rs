@@ -16,7 +16,7 @@ use cairo::LineJoin;
 mod graphics;
 mod utils;
 
-use graphics::Graphic;
+use graphics::{Graphic, MorphGraphic};
 
 fn scan<P: AsRef<Path>>(path: P) -> io::Result<(Vec<String>, Vec<Graphic>)> {
     let mut names = Vec::new();
@@ -77,21 +77,43 @@ fn main() {
     let bar = gtk::Toolbar::new();
     container.pack_start(&bar, false, false, 0);
 
-    let graphic_chooser = gtk::ComboBoxText::new();
+    let start_chooser = gtk::ComboBoxText::new();
     let item = gtk::ToolItem::new();
     bar.insert(&item, -1);
-    item.add(&graphic_chooser);
+    item.add(&start_chooser);
 
     for name in &names {
-        graphic_chooser.append_text(name);
+        start_chooser.append_text(name);
+    }
+
+    let scale = gtk::Scale::new_with_range(gtk::Orientation::Horizontal, 0.0, 1.0, 0.001);
+    let item = gtk::ToolItem::new();
+    bar.insert(&item, -1);
+    bar.set_item_expand(&item, true);
+    item.add(&scale);
+
+    let target_chooser = gtk::ComboBoxText::new();
+    let item = gtk::ToolItem::new();
+    bar.insert(&item, -1);
+    item.add(&target_chooser);
+
+    for name in &names {
+        target_chooser.append_text(name);
     }
 
     let canvas = gtk::DrawingArea::new();
     container.pack_start(&canvas, true, true, 0);
 
     let canvas_redraw = canvas.clone();
-    graphic_chooser.connect_changed(move |_| canvas_redraw.queue_draw());
-    graphic_chooser.set_active(0);
+    start_chooser.connect_changed(move |_| canvas_redraw.queue_draw());
+    start_chooser.set_active(0);
+
+    let canvas_redraw = canvas.clone();
+    scale.connect_value_changed(move |_| canvas_redraw.queue_draw());
+
+    let canvas_redraw = canvas.clone();
+    target_chooser.connect_changed(move |_| canvas_redraw.queue_draw());
+    target_chooser.set_active(0);
 
     canvas.connect_draw(move |canvas, ctx| {
         let gtk::Allocation {width, height, ..} = canvas.get_allocation();
@@ -105,9 +127,20 @@ fn main() {
         ctx.translate(width / size, -height / size);
 
         ctx.set_line_join(LineJoin::Round);
+        let start = &graphics[start_chooser.get_active() as usize];
+        let target = &graphics[target_chooser.get_active() as usize];
+        let morph = MorphGraphic::new(start, target);
+        let t = scale.get_value();
 
-        let graphic = &graphics[graphic_chooser.get_active() as usize];
-        graphic.draw(ctx);
+        if t == 0.0 {
+            let graphic = &morph.start.graphic;
+            graphic.draw(ctx);
+        } else if t == 1.0 {
+            let graphic = &morph.target.graphic;
+            graphic.draw(ctx);
+        } else {
+            morph.draw(ctx, t);
+        }
 
         gtk::Inhibit(false)
     });

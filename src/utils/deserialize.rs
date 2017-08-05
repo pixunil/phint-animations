@@ -108,8 +108,8 @@ impl<'de> Visitor<'de> for StyleVisitor {
         where E: de::Error
     {
         match value {
-            "stroke" => Ok(Style::Stroke),
-            "fill" => Ok(Style::Fill),
+            "stroke" => Ok(Style::stroke()),
+            "fill" => Ok(Style::fill()),
             invalid => Err(E::invalid_value(Unexpected::Str(invalid), &self))
         }
     }
