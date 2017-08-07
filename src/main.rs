@@ -129,17 +129,16 @@ fn main() {
         ctx.set_line_join(LineJoin::Round);
         let start = &graphics[start_chooser.get_active() as usize];
         let target = &graphics[target_chooser.get_active() as usize];
-        let morph = MorphGraphic::new(start, target);
+        let (morph, groups) = MorphGraphic::new(start, target);
+        let groups = groups.link(&morph);
         let t = scale.get_value();
 
         if t == 0.0 {
-            let graphic = &morph.start.graphic;
-            graphic.draw(ctx);
+            morph.start.draw(ctx);
         } else if t == 1.0 {
-            let graphic = &morph.target.graphic;
-            graphic.draw(ctx);
+            morph.target.draw(ctx);
         } else {
-            morph.draw(ctx, t);
+            morph.draw(ctx, groups, t);
         }
 
         gtk::Inhibit(false)

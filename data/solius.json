@@ -5,13 +5,15 @@
             "type": "arc",
             "radius": 0.05
         }],
+        "line-width": 0,
         "style": "fill"
     }, {
         "segments": [{
             "type": "oval-arc",
             "radiusx": 0.6,
             "radiusy": 0.4
-        }]
+        }],
+        "close": true
     }, {
         "segments": [{
             "type": "line",
