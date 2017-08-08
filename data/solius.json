@@ -5,8 +5,8 @@
             "type": "arc",
             "radius": 0.05
         }],
-        "line-width": 0,
-        "style": "fill"
+        "style": "fill",
+        "line-width": 0
     }, {
         "segments": [{
             "type": "oval-arc",

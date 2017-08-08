@@ -2,7 +2,7 @@ use std::ops::{Add, AddAssign, Sub, SubAssign, Mul, Div};
 use std::f64::consts;
 use cairo::Context;
 
-use utils;
+use utils::{self, Lerp};
 
 const TAU: f64 = 2.0 * consts::PI;
 
@@ -29,10 +29,6 @@ impl Point {
             x: self.x + radiusx * angle.cos(),
             y: self.y + radiusy * angle.sin()
         }
-    }
-
-    pub fn lerp(self, target: Point, t: f64) -> Point {
-        self + t * (target - self)
     }
 }
 
@@ -107,6 +103,15 @@ impl Div<f64> for Point {
         Point {
             x: self.x / scale,
             y: self.y / scale
+        }
+    }
+}
+
+impl Lerp for Point {
+    fn lerp(&self, target: &Point, t: f64) -> Point {
+        Point {
+            x: self.x.lerp(&target.x, t),
+            y: self.y.lerp(&target.y, t)
         }
     }
 }
@@ -336,22 +341,13 @@ impl BezierCurve {
         // lerp between all points at each iteration, until only one point remains
         while points.len() > 1 {
             points = points.windows(2).map(|pair| {
-                pair[0].lerp(pair[1], state)
+                pair[0].lerp(&pair[1], state)
             }).collect();
 
             hull.extend(points.iter().cloned())
         }
 
         hull
-    }
-
-    pub fn lerp(&self, other: &BezierCurve, t: f64) -> BezierCurve {
-        BezierCurve {
-            start: self.start.lerp(other.start, t),
-            control1: self.control1.lerp(other.control1, t),
-            control2: self.control2.lerp(other.control2, t),
-            end: self.end.lerp(other.end, t)
-        }
     }
 
     pub fn draw(&self, ctx: &Context, begin: bool) {
@@ -363,6 +359,17 @@ impl BezierCurve {
 
         ctx.curve_to(self.control1.x, self.control1.y,
             self.control2.x, self.control2.y, self.end.x, self.end.y);
+    }
+}
+
+impl Lerp for BezierCurve {
+     fn lerp(&self, other: &BezierCurve, t: f64) -> BezierCurve {
+        BezierCurve {
+            start: self.start.lerp(&other.start, t),
+            control1: self.control1.lerp(&other.control1, t),
+            control2: self.control2.lerp(&other.control2, t),
+            end: self.end.lerp(&other.end, t)
+        }
     }
 }
 
