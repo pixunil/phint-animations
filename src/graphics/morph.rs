@@ -1,50 +1,81 @@
 use std::cmp;
-use std::iter;
+use std::rc::Rc;
+use rand::{self, Rng};
 use cairo::Context;
 
 use utils::Lerp;
 use super::segments::BezierCurve;
 use super::single::{Graphic, Group};
 
-pub struct GroupsRaw(Vec<usize>);
+#[derive(Clone, Debug)]
+struct GroupRaw {
+    group_id: usize,
+    pos: usize
+}
+
+impl GroupRaw {
+    fn new(group_id: usize, pos: usize) -> GroupRaw {
+        GroupRaw {group_id, pos}
+    }
+}
+
+#[derive(Clone)]
+pub struct GroupsRaw(Vec<GroupRaw>);
 
 impl GroupsRaw {
-    pub fn link<'a, 'b>(self, graphic: &'b MorphGraphic<'a>)
-        -> GroupsLinked<'a, 'b>
-    {
+    pub fn link<'a>(&self, graphic: &'a MorphGraphic) -> GroupsLinked<'a> {
         let mid = graphic.beziers.len() / 2;
         let groups = self.0.split_at(mid);
         let groups = groups.0.iter().zip(groups.1);
         let beziers = graphic.beziers.split_at(mid);
         let beziers = beziers.0.iter().zip(beziers.1);
 
-        let mut start = graphic.start.groups()
-            .map(BezierGroup::new).collect::<Vec<_>>();
-        let mut target = graphic.target.groups()
-            .map(BezierGroup::new).collect::<Vec<_>>();
+        let mut start = vec![Vec::new(); graphic.start.groups().len()];
+        let mut target = vec![Vec::new(); graphic.target.groups().len()];
 
         for (group, bezier) in groups.zip(beziers) {
-            let group = (*group.0, *group.1);
+            let pos = (group.0.pos, group.1.pos);
+            let group = (group.0.group_id, group.1.group_id);
 
             let target_group = &graphic.target.group(group.1);
             let segment = MorphSegment::new(bezier, target_group);
-            start[group.0].add(segment);
+            start[group.0].push((segment, pos.0));
             let start_group = &graphic.start.group(group.0);
             let segment = MorphSegment::new(bezier, start_group);
-            target[group.1].add(segment);
+            target[group.1].push((segment, pos.1));
         }
+
+        let start = start.into_iter().zip(graphic.start.groups())
+            .map(|(mut segments, group)| {
+                segments.sort_by_key(|&(_, pos)| pos);
+
+                let segments = segments.into_iter()
+                    .map(|(segment, _)| segment).collect();
+
+                BezierGroup::new(segments, group)
+            }).collect();
+
+        let target = target.into_iter().zip(graphic.target.groups())
+            .map(|(mut segments, group)| {
+                segments.sort_by_key(|&(_, pos)| pos);
+
+                let segments = segments.into_iter()
+                    .map(|(segment, _)| segment).collect();
+
+                BezierGroup::new(segments, group)
+            }).collect();
 
         GroupsLinked {start, target}
     }
 }
 
-pub struct GroupsLinked<'a: 'b, 'b> {
-    start: Vec<BezierGroup<'a, 'b>>,
-    target: Vec<BezierGroup<'a, 'b>>
+pub struct GroupsLinked<'a> {
+    start: Vec<BezierGroup<'a>>,
+    target: Vec<BezierGroup<'a>>
 }
 
-impl<'a, 'b> GroupsLinked<'a, 'b> {
-    fn choose(&self, t: f64) -> &[BezierGroup<'a, 'b>] {
+impl<'a> GroupsLinked<'a> {
+    fn choose(&self, t: f64) -> &[BezierGroup<'a>] {
         if t < 0.5 {
             &self.start
         } else {
@@ -54,37 +85,39 @@ impl<'a, 'b> GroupsLinked<'a, 'b> {
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct MorphGraphic<'a> {
-    pub start: &'a Graphic,
-    pub target: &'a Graphic,
+pub struct MorphGraphic {
+    pub start: Rc<Graphic>,
+    pub target: Rc<Graphic>,
     beziers: Vec<BezierCurve>
 }
 
-impl<'a> MorphGraphic<'a> {
-    pub fn new<'b>(start: &'a Graphic, target: &'a Graphic)
-        -> (MorphGraphic<'a>, GroupsRaw)
+impl MorphGraphic {
+    pub fn new(start: Rc<Graphic>, target: Rc<Graphic>)
+        -> (MorphGraphic, GroupsRaw)
     {
         let start_count = start.count_beziers();
         let target_count = target.count_beziers();
         let count = cmp::max(start_count, target_count);
 
         let mut graphic = MorphGraphic {
-            start: start,
-            target: target,
+            start: start.clone(),
+            target: target.clone(),
             beziers: Vec::with_capacity(2 * count)
         };
 
-        let mut groups = Vec::with_capacity(2 * count);
-        graphic.append_beziers(start, start_count, count, &mut groups);
-        graphic.append_beziers(target, target_count, count, &mut groups);
+        let mut groups = GroupsRaw(Vec::with_capacity(2 * count));
+        graphic.append_beziers(&start, start_count, count, &mut groups);
+        graphic.append_beziers(&target, target_count, count, &mut groups);
 
-        (graphic, GroupsRaw(groups))
+        (graphic, groups)
     }
 
     fn append_beziers(&mut self, graphic: &Graphic,
-        graphic_count: usize, count: usize, groups: &mut Vec<usize>)
+        graphic_count: usize, count: usize, groups: &mut GroupsRaw)
     {
+        let mut combined = Vec::new();
         let mut segment_id = 0;
+        let mut bezier_id = 0;
 
         for (group_id, group) in graphic.groups().enumerate() {
             for segment in group.segments() {
@@ -95,17 +128,27 @@ impl<'a> MorphGraphic<'a> {
                     splits += 1;
                 }
 
-                groups.extend(iter::repeat(group_id).take(splits));
-                let splits = segment.to_beziers(splits);
-                self.beziers.extend(splits);
+                let splits = segment.to_beziers(splits).into_iter()
+                    .map(|bezier| {
+                        bezier_id += 1;
+                        (bezier, group_id, bezier_id)
+                    });
+
+                combined.extend(splits);
                 segment_id += 1;
             }
         }
+
+        let mut rng = rand::thread_rng();
+        rng.shuffle(&mut combined);
+
+        for (bezier, group_id, pos) in combined {
+            self.beziers.push(bezier);
+            groups.0.push(GroupRaw::new(group_id, pos));
+        }
     }
 
-    pub fn draw<'b>(&'b self, ctx: &Context, groups: GroupsLinked<'a, 'b>,
-        t: f64)
-    {
+    pub fn draw<'a>(&'a self, ctx: &Context, groups: GroupsLinked<'a>, t: f64) {
         let color = self.start.color().lerp(self.target.color(), t);
 
         for group in groups.choose(t) {
@@ -115,18 +158,14 @@ impl<'a> MorphGraphic<'a> {
 }
 
 #[derive(Clone, PartialEq, Debug)]
-struct BezierGroup<'a: 'b, 'b> {
-    segments: Vec<MorphSegment<'a, 'b>>,
+struct BezierGroup<'a> {
+    segments: Vec<MorphSegment<'a>>,
     group: &'a Group
 }
 
-impl<'a, 'b> BezierGroup<'a, 'b> {
-    fn new(group: &'a Group) -> BezierGroup<'a, 'b> {
-        BezierGroup {segments: Vec::new(), group}
-    }
-
-    fn add(&mut self, segment: MorphSegment<'a, 'b>) {
-        self.segments.push(segment);
+impl<'a> BezierGroup<'a> {
+    fn new(segments: Vec<MorphSegment<'a>>, group: &'a Group) -> BezierGroup<'a> {
+        BezierGroup {segments, group}
     }
 
     fn draw(&self, ctx: &Context, t: f64, color: (f64, f64, f64)) {
@@ -164,15 +203,15 @@ impl<'a, 'b> BezierGroup<'a, 'b> {
 }
 
 #[derive(Clone, PartialEq, Debug)]
-struct MorphSegment<'a, 'b> {
-    start: &'b BezierCurve,
-    target: &'b BezierCurve,
+struct MorphSegment<'a> {
+    start: &'a BezierCurve,
+    target: &'a BezierCurve,
     group: &'a Group
 }
 
-impl<'a, 'b> MorphSegment<'a, 'b> {
-    fn new((start, target): (&'b BezierCurve, &'b BezierCurve),
-        group: &'a Group) -> MorphSegment<'a, 'b>
+impl<'a> MorphSegment<'a> {
+    fn new((start, target): (&'a BezierCurve, &'a BezierCurve),
+        group: &'a Group) -> MorphSegment<'a>
     {
         MorphSegment {start, target, group}
     }

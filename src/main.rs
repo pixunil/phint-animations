@@ -1,3 +1,4 @@
+extern crate rand;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
@@ -10,6 +11,8 @@ use std::fs;
 use std::io;
 use std::path::Path;
 use std::ffi::OsStr;
+use std::cell::{Cell, RefCell};
+use std::rc::Rc;
 use gtk::prelude::*;
 use cairo::LineJoin;
 
@@ -18,7 +21,8 @@ mod utils;
 
 use graphics::{Graphic, MorphGraphic};
 
-fn scan<P: AsRef<Path>>(path: P) -> io::Result<(Vec<String>, Vec<Graphic>)> {
+fn scan<P: AsRef<Path>>(path: P) -> io::Result<(Vec<String>, Vec<Rc<Graphic>>)>
+{
     let mut names = Vec::new();
     let mut graphics = Vec::new();
 
@@ -44,7 +48,7 @@ fn scan<P: AsRef<Path>>(path: P) -> io::Result<(Vec<String>, Vec<Graphic>)> {
             };
 
             names.push(name.into());
-            graphics.push(graphic);
+            graphics.push(Rc::new(graphic));
         }
     }
 
@@ -101,19 +105,40 @@ fn main() {
         target_chooser.append_text(name);
     }
 
+    let needs_change = Rc::new(Cell::new(false));
     let canvas = gtk::DrawingArea::new();
     container.pack_start(&canvas, true, true, 0);
 
-    let canvas_redraw = canvas.clone();
-    start_chooser.connect_changed(move |_| canvas_redraw.queue_draw());
+    start_chooser.connect_changed({
+        let canvas = canvas.clone();
+        let needs_change = needs_change.clone();
+        move |_| {
+            needs_change.set(true);
+            canvas.queue_draw();
+        }
+    });
     start_chooser.set_active(0);
 
-    let canvas_redraw = canvas.clone();
-    scale.connect_value_changed(move |_| canvas_redraw.queue_draw());
+    scale.connect_value_changed({
+        let canvas = canvas.clone();
+        move |_| {
+            canvas.queue_draw();
+        }
+    });
 
-    let canvas_redraw = canvas.clone();
-    target_chooser.connect_changed(move |_| canvas_redraw.queue_draw());
+    target_chooser.connect_changed({
+        let canvas = canvas.clone();
+        let needs_change = needs_change.clone();
+        move |_| {
+            needs_change.set(true);
+            canvas.queue_draw();
+        }
+    });
     target_chooser.set_active(0);
+
+    let start = graphics[start_chooser.get_active() as usize].clone();
+    let target = graphics[target_chooser.get_active() as usize].clone();
+    let morph_data = RefCell::new(MorphGraphic::new(start, target));
 
     canvas.connect_draw(move |canvas, ctx| {
         let gtk::Allocation {width, height, ..} = canvas.get_allocation();
@@ -126,10 +151,17 @@ fn main() {
         // align the point 0,0 to the middle
         ctx.translate(width / size, -height / size);
 
+        if needs_change.get() {
+            let start = graphics[start_chooser.get_active() as usize].clone();
+            let target = graphics[target_chooser.get_active() as usize].clone();
+            *morph_data.borrow_mut() = MorphGraphic::new(start, target);
+            needs_change.set(false);
+        }
+
         ctx.set_line_join(LineJoin::Round);
-        let start = &graphics[start_chooser.get_active() as usize];
-        let target = &graphics[target_chooser.get_active() as usize];
-        let (morph, groups) = MorphGraphic::new(start, target);
+
+        let (ref morph, ref groups) = *morph_data.borrow();
+
         let groups = groups.link(&morph);
         let t = scale.get_value();
 
