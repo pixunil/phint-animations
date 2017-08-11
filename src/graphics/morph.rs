@@ -97,7 +97,7 @@ impl MorphGraphic {
     {
         let start_count = start.count_beziers();
         let target_count = target.count_beziers();
-        let count = cmp::max(start_count, target_count);
+        let count = start_count.lcm(&target_count);
 
         let mut graphic = MorphGraphic {
             start: start.clone(),
@@ -122,7 +122,7 @@ impl MorphGraphic {
         for (group_id, group) in graphic.groups().enumerate() {
             for segment in group.segments() {
                 let mut splits = segment.count_beziers();
-                splits += count / graphic_count - 1;
+                splits *= count / graphic_count;
 
                 if segment_id < count % graphic_count {
                     splits += 1;

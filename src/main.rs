@@ -1,3 +1,4 @@
+extern crate num;
 extern crate rand;
 extern crate serde;
 #[macro_use]

@@ -5,6 +5,7 @@ authors = ["Jakob Stigloher <pixunil@gmx.de>"]
 build = "build.rs"
 
 [dependencies]
+num = "0.1"
 rand = "0.3"
 serde = "1.0"
 serde_derive = "1.0"
